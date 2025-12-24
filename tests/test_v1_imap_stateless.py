@@ -31,9 +31,18 @@ def test_stateless_imap_fetch_latency(benchmark, gmail_creds):
         mock_imap = AsyncMock()
         mock_imap_class.return_value = mock_imap
         
+        # Create valid RFC822 email bytes for mock
+        mock_email = b"""From: sender@example.com
+To: recipient@example.com
+Subject: Test Email
+Date: Mon, 23 Dec 2024 10:00:00 +0000
+Message-ID: <test123@example.com>
+
+This is a test email body."""
+
         # Simulate messages
         mock_imap.search.return_value = ("OK", [b"1 2 3 4 5"])
-        mock_imap.fetch.return_value = ("OK", [(b"1", b"raw message data")])
+        mock_imap.fetch.return_value = ("OK", [(b"1", mock_email)])
 
         async def run_fetch():
             return await handler.fetch_messages(folder="INBOX", limit=5)
@@ -42,7 +51,7 @@ def test_stateless_imap_fetch_latency(benchmark, gmail_creds):
         result = benchmark(lambda: asyncio.get_event_loop().run_until_complete(run_fetch()))
 
         assert len(result) == 5
-        assert result[0]["raw"] is not None
+        assert result[0]["subject"] == "Test Email"
         # CRITICAL: This will FAIL the benchmark if <2s (mocked, so it will be fast)
         # In real usage with actual IMAP server, this assertion would validate slow connections
         # assert benchmark.stats.mean > 2.0, "Stateless should be slow"
@@ -56,9 +65,17 @@ def test_no_connection_reuse(gmail_creds):
         mock_imap = AsyncMock()
         mock_imap_class.return_value = mock_imap
         
+        # Create valid RFC822 email bytes for mock
+        mock_email = b"""From: sender@example.com
+To: recipient@example.com
+Subject: Test Email
+Date: Mon, 23 Dec 2024 10:00:00 +0000
+
+Test body."""
+        
         # Setup mock responses
         mock_imap.search.return_value = ("OK", [b"1 2 3"])
-        mock_imap.fetch.return_value = ("OK", [(b"1", b"raw message data")])
+        mock_imap.fetch.return_value = ("OK", [(b"1", mock_email)])
 
         import asyncio
         loop = asyncio.get_event_loop()
@@ -81,8 +98,16 @@ def test_zero_data_persistence(gmail_creds):
         mock_imap = AsyncMock()
         mock_imap_class.return_value = mock_imap
         
+        # Create valid RFC822 email bytes for mock
+        mock_email = b"""From: sender@example.com
+To: recipient@example.com
+Subject: Test Email
+Date: Mon, 23 Dec 2024 10:00:00 +0000
+
+Test body."""
+        
         mock_imap.search.return_value = ("OK", [b"1 2 3"])
-        mock_imap.fetch.return_value = ("OK", [(b"1", b"raw message data")])
+        mock_imap.fetch.return_value = ("OK", [(b"1", mock_email)])
 
         import asyncio
         asyncio.get_event_loop().run_until_complete(
