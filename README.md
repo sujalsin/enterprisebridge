@@ -78,6 +78,13 @@ pytest tests/ -v
 | Disconnect | 96ms | 1ms |
 | **Overhead %** | **43%** | **13%** |
 
+### Complex Workflow Performance
+
+| Scenario | v3 Performance | Target |
+|----------|----------------|--------|
+| **Full Workflow** (Fetch 3 + Reply) | **975ms** | < 2000ms |
+| **Rate Limits** | Handles 429/452 errors gracefullly | Pass |
+
 ---
 
 ## Phase 1: Stateless Handlers (Baseline)
